@@ -18,6 +18,9 @@
 <div class="welcome" id="welcome">
   <div class="stage" id="stage">
 
+    <!-- rises as the heart is pumped; behind the heart and every panel -->
+    <div class="fluid" id="fluid" aria-hidden="true"><span class="fluid__surface"></span></div>
+
     <section class="panel monitor" aria-live="polite">
       <div class="panel__inner monitor__inner">
         <div class="monitor__row">
@@ -47,12 +50,17 @@
       <div class="cooldown" id="cooldown" aria-hidden="true"><span></span></div>
     </div>
 
-    <section class="panel ekg">
-      <div class="panel__inner ekg__inner">
-        <canvas id="ekg" width="320" height="128" aria-label="Electrocardiogram trace"></canvas>
-        <span class="ekg__lead">LEAD II</span>
-      </div>
-    </section>
+    <div class="ekg-block">
+      <p class="ekg-status" id="ekgStatus">NoMouth Site Status:<br><span
+        class="ekg-status__value" id="ekgStatusValue"
+        data-text="Insufficient blood, please pump.">Insufficient blood, please pump.</span></p>
+      <section class="panel ekg">
+        <div class="panel__inner ekg__inner">
+          <canvas id="ekg" width="320" height="128" aria-label="Electrocardiogram trace"></canvas>
+          <span class="ekg__lead">LEAD II</span>
+        </div>
+      </section>
+    </div>
 
     <button class="sound" id="sound" type="button" aria-pressed="true">
       <span aria-hidden="true">♪</span> SOUND

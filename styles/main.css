@@ -7,6 +7,7 @@
   --red:         #b02030;
   --red-bright:  #e0364b;
   --red-deep:    #6b1524;
+  --blood:       #6e0f1d;   /* the fluid rising behind the intro */
   --white:       #efe7e0;
   --paper:       #ffffff;   /* must match the logo's interior white exactly */
   --rule:        rgba(239, 231, 224, 0.15);   /* hairlines between parts */
@@ -16,7 +17,9 @@
   --px: 4px;
   --beat: 0;
   --vitality: 0;
+  --fill: 0;                 /* 0–1, how far the blood has risen */
   --glitch: 0;               /* 0–1, how hard the screen is tearing */
+  --glitch-amt: 0;           /* the same tearing, driving the status line */
 
   --display: "Silkscreen", ui-monospace, "SF Mono", Menlo, Consolas, monospace;  /* intro only */
   --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -67,7 +70,6 @@ body.is-live .welcome {          /* handed over to the site */
   display: grid;
   place-items: center;
   padding: clamp(12px, 3vw, 32px);
-  background: var(--black);
 }
 
 /* ── panels ── */
@@ -85,7 +87,82 @@ body.is-live .welcome {          /* handed over to the site */
 }
 
 .monitor { top: clamp(12px, 3vw, 36px); left: clamp(12px, 3vw, 36px); }
-.ekg     { bottom: clamp(12px, 3vw, 36px); right: clamp(12px, 3vw, 36px); }
+
+.ekg-block {
+  position: absolute;
+  bottom: clamp(12px, 3vw, 36px);
+  right: clamp(12px, 3vw, 36px);
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+}
+.ekg { position: relative; }          /* the block places it now */
+
+/* once the heart is going, the status reads as bright as the readout */
+.stage[data-alive="1"] .ekg-status { color: var(--white); }
+
+.ekg-status {
+  margin: 0;
+  transition: color 500ms ease;
+  font-size: clamp(8px, 0.85vw, 11px);
+  letter-spacing: 0.12em;
+  line-height: 1.7;
+  color: var(--dim);
+  text-align: right;
+  white-space: nowrap;      /* the second line stays in one piece */
+}
+
+/* The status value tears itself apart the same way the heart does: the line is
+   drawn three times, the two copies offset into red and cyan and sliced into
+   bands that jump about. */
+.ekg-status__value {
+  position: relative;
+  display: inline-block;
+  text-align: left;         /* the ellipsis grows rightward into reserved space */
+}
+.ekg-status__value[data-glitch] { animation: statusJitter 0.24s steps(1) infinite; }
+
+.ekg-status__value[data-glitch]::before,
+.ekg-status__value[data-glitch]::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+}
+.ekg-status__value[data-glitch]::before {
+  color: #ff2d2d;
+  animation: statusSliceA 0.6s steps(1) infinite;
+}
+.ekg-status__value[data-glitch]::after {
+  color: #2de0ff;
+  animation: statusSliceB 0.47s steps(1) infinite;
+}
+
+@keyframes statusJitter {
+  0%, 100% { transform: translate(0, 0); }
+  25%      { transform: translate(1px, 0); }
+  50%      { transform: translate(-1px, 0); }
+  75%      { transform: translate(0, -1px); }
+}
+/* offsets ride --glitch-amt, the same escalation the canvas glitch uses, so the
+   line comes apart at the same rate the heart does */
+@keyframes statusSliceA {
+  0%   { clip-path: inset(0 0 78% 0);   transform: translate(calc(var(--glitch-amt) * -3px), 0); }
+  20%  { clip-path: inset(34% 0 42% 0); transform: translate(calc(var(--glitch-amt) *  3px), 0); }
+  40%  { clip-path: inset(64% 0 10% 0); transform: translate(calc(var(--glitch-amt) * -2px), 0); }
+  60%  { clip-path: inset(10% 0 70% 0); transform: translate(calc(var(--glitch-amt) *  4px), 0); }
+  80%  { clip-path: inset(50% 0 28% 0); transform: translate(calc(var(--glitch-amt) * -4px), 0); }
+  100% { clip-path: inset(76% 0 2% 0);  transform: translate(calc(var(--glitch-amt) *  2px), 0); }
+}
+@keyframes statusSliceB {
+  0%   { clip-path: inset(58% 0 18% 0); transform: translate(calc(var(--glitch-amt) *  3px), 0); }
+  25%  { clip-path: inset(8% 0 74% 0);  transform: translate(calc(var(--glitch-amt) * -4px), 0); }
+  50%  { clip-path: inset(40% 0 36% 0); transform: translate(calc(var(--glitch-amt) *  2px), 0); }
+  75%  { clip-path: inset(72% 0 6% 0);  transform: translate(calc(var(--glitch-amt) * -2px), 0); }
+  100% { clip-path: inset(24% 0 58% 0); transform: translate(calc(var(--glitch-amt) *  4px), 0); }
+}
 
 .monitor__inner { min-width: clamp(120px, 13vw, 176px); }
 .monitor__row { display: flex; align-items: baseline; gap: 0.4em; }
@@ -130,6 +207,44 @@ body.is-live .welcome {          /* handed over to the site */
   color: rgba(239, 231, 224, 0.45);
   pointer-events: none;
 }
+
+/* ── the fluid ── */
+.fluid {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--fill) * 100%);
+  background: var(--blood);
+  pointer-events: none;
+  z-index: 0;
+  visibility: hidden;          /* nothing to show, and no crest, until it starts */
+}
+.fluid[data-on] { visibility: visible; }
+
+/* crest, drawn just above the body of the fluid */
+.fluid__surface {
+  position: absolute;
+  left: -50%;
+  right: -50%;
+  bottom: 100%;
+  height: 15px;
+  /* a touch brighter than the body, so the surface reads as a meniscus */
+  background: #8f1526;
+  clip-path: polygon(
+    0% 100%, 0% 55%, 8% 30%, 17% 22%, 25% 34%, 33% 58%, 42% 68%,
+    50% 58%, 58% 34%, 67% 22%, 75% 30%, 83% 55%, 92% 72%, 100% 78%,
+    100% 100%);
+  transform-origin: bottom center;
+  animation: swell 5.5s ease-in-out infinite alternate;
+}
+@keyframes swell {
+  from { transform: translateX(-6%) scaleY(1); }
+  to   { transform: translateX(6%) scaleY(1.5); }
+}
+
+/* the heart and its prompt ride above the fluid */
+.heartzone { position: relative; z-index: 1; }
 
 /* ── the heart ── */
 .heartzone { display: grid; justify-items: center; gap: clamp(14px, 2.4vh, 28px); }
@@ -261,6 +376,37 @@ body.is-live .welcome {          /* handed over to the site */
 .sound[aria-pressed="false"] { opacity: 0.55; text-decoration: line-through; }
 .skip  { bottom: clamp(12px, 3vw, 36px); left: clamp(12px, 3vw, 36px); }
 .stage[data-alive="1"] .skip { opacity: 0; pointer-events: none; }
+
+/* ── every other bit of text tears with it ──────────────────
+   Chromatic offset by text-shadow rather than duplicated copies: it needs no
+   mirrored content, so it works on the live BPM digits and on padded controls
+   without anything to keep in sync. Offsets ride --glitch-amt like the rest.
+   These come after the readout rules on purpose — the alive state puts its own
+   glow on .monitor__value, and this has to win. */
+.stage[data-glitch="1"] .monitor__value,
+.stage[data-glitch="1"] .monitor__unit,
+.stage[data-glitch="1"] .monitor__status,
+.stage[data-glitch="1"] .ekg-status,
+.stage[data-glitch="1"] .ekg__lead,
+.stage[data-glitch="1"] .sound {
+  text-shadow:
+    calc(var(--glitch-amt) * -2px) 0 rgba(255, 45, 45, 0.85),
+    calc(var(--glitch-amt) *  2px) 0 rgba(45, 224, 255, 0.85);
+  animation: textTear 0.36s steps(1) infinite;
+}
+.stage[data-glitch="1"] .monitor__unit  { animation-duration: 0.29s; }
+.stage[data-glitch="1"] .monitor__status { animation-duration: 0.43s; }
+.stage[data-glitch="1"] .ekg__lead      { animation-duration: 0.31s; }
+.stage[data-glitch="1"] .sound          { animation-duration: 0.47s; }
+
+@keyframes textTear {
+  0%   { transform: translate(calc(var(--glitch-amt) * -2px), 0); clip-path: inset(0 0 0 0); }
+  20%  { transform: translate(calc(var(--glitch-amt) *  3px), 0); clip-path: inset(0 0 36% 0); }
+  40%  { transform: translate(calc(var(--glitch-amt) * -1px), 0); clip-path: inset(30% 0 0 0); }
+  60%  { transform: translate(calc(var(--glitch-amt) *  2px), 0); clip-path: inset(0 0 0 0); }
+  80%  { transform: translate(calc(var(--glitch-amt) * -3px), 0); clip-path: inset(54% 0 10% 0); }
+  100% { transform: translate(0, 0);                              clip-path: inset(0 0 0 0); }
+}
 
 /* ── CRT dressing ── */
 .scanlines, .crt { position: absolute; inset: 0; pointer-events: none; }
@@ -629,7 +775,8 @@ a.card__link:focus-visible .card__play { opacity: 1; transform: scale(1.15); }
   .monitor { top: 12px; left: 12px; }
   .sound   { top: 12px; right: 12px; }
   .skip    { bottom: 12px; left: 12px; }
-  .ekg { bottom: 12px; right: 50%; transform: translateX(50%); }
+  .ekg-block { bottom: 12px; right: 50%; transform: translateX(50%); justify-items: center; }
+  .ekg-status { text-align: center; }
   #ekg { width: min(74vw, 320px); }
   .skip { bottom: calc(12px + 190px); }
   .site-header { padding: 14px 20px; }
@@ -647,6 +794,18 @@ a.card__link:focus-visible .card__play { opacity: 1; transform: scale(1.15); }
 
 /* ══ Reduced motion ═════════════════════════════════════════ */
 @media (prefers-reduced-motion: reduce) {
+  .fluid__surface { animation: none; }
+  .stage[data-glitch="1"] .monitor__value,
+  .stage[data-glitch="1"] .monitor__unit,
+  .stage[data-glitch="1"] .monitor__status,
+  .stage[data-glitch="1"] .ekg-status,
+  .stage[data-glitch="1"] .ekg__lead,
+  .stage[data-glitch="1"] .sound { animation: none; text-shadow: none; }
+  .ekg-status__value[data-glitch],
+  .ekg-status__value[data-glitch]::before,
+  .ekg-status__value[data-glitch]::after { animation: none; }
+  .ekg-status__value[data-glitch]::before,
+  .ekg-status__value[data-glitch]::after { display: none; }
   .hero__say { transition-duration: 1ms; }
   .hero__say[data-done] .hero__caret { animation: none; }
   html { scroll-behavior: auto; }

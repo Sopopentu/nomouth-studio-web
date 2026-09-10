@@ -24,6 +24,8 @@
   const soundBtn  = $('sound');
   const skipBtn   = $('skip');
   const replayBtn = $('replay');
+  const fluid     = $('fluid');
+  const statusVal = $('ekgStatusValue');
   const canvas    = $('ekg');
   const ctx       = canvas.getContext('2d');
   const crt       = $('crt');
@@ -41,6 +43,10 @@
 
   const CLICKS_TO_REVIVE = 3;
   const COOLDOWN = 1.5;      // seconds; let it lapse and one click drains away
+  const FILL_PER_CLICK = 0.15;   // how far the blood rises with each pump
+  const SITE_STATUS_OK = 'Threshold reached, now loading site';
+  const DOTS = ['.', '..', '...'];
+  const DOT_MS = 420;
 
   const PIX = 'assets/heart.png';
   const T1  = 'assets/heart-t1.png';   // Fig. 37
@@ -95,6 +101,8 @@
     surge: 0,
     pulseEnd: 0,
     beat: 0,
+    fill: 0,
+    fillTarget: 0,
     chaos: 0,
     ease: 1.4,
     running: true,
@@ -324,6 +332,7 @@
       state.chaos = 0.35;
       state.glitchSwap = 0;
       stage.dataset.glitch = '1';
+      if (statusVal) statusVal.dataset.glitch = '1';   // in step with the heart
       bpmStatus.textContent = 'SIGNAL LOST';
       tone(1400, 0.5, 0.05, 'sawtooth', 120);
     }
@@ -337,8 +346,10 @@
     if (handedOver) return;
     handedOver = true;
 
+    stopLoadingDots();
     delete stage.dataset.glitch;
     root.style.setProperty('--glitch', '0');
+    root.style.setProperty('--glitch-amt', '0');
     heartBtn.style.setProperty('--scale', '1');
     state.running = false;
 
@@ -350,6 +361,53 @@
     const target = document.querySelector('.site-header__mark');
     if (target) target.focus({ preventScroll: true });
   }
+
+  /* ── site status ────────────────────────────────────────── */
+  let dotTimer = null;
+  let dotStep = 0;
+
+  function paintStatus() {
+    // both the text and the copy the glitch layers read, so they stay in step
+    const text = SITE_STATUS_OK + DOTS[dotStep % DOTS.length];
+    statusVal.textContent = text;
+    statusVal.dataset.text = text;
+  }
+
+  /* Silkscreen isn't monospaced, so a growing ellipsis changes the line's width
+     and, since it is right-aligned, shunts the whole sentence sideways on every
+     tick. Pin the box to its widest state and left-align inside it: the
+     sentence stays put and the dots grow into space already reserved. */
+  function pinStatusWidth() {
+    statusVal.style.width = '';
+    const held = statusVal.textContent;
+    statusVal.textContent = SITE_STATUS_OK + DOTS[DOTS.length - 1];
+    const w = statusVal.getBoundingClientRect().width;
+    statusVal.textContent = held;
+    if (w) statusVal.style.width = w.toFixed(2) + 'px';
+  }
+
+  function startLoadingDots() {
+    if (!statusVal) return;
+    pinStatusWidth();
+
+    if (reduceMotion) { dotStep = DOTS.length - 1; paintStatus(); return; }
+
+    clearInterval(dotTimer);
+    dotStep = 0;
+    paintStatus();
+    dotTimer = setInterval(() => { dotStep++; paintStatus(); }, DOT_MS);
+  }
+
+  function stopLoadingDots() {
+    clearInterval(dotTimer);
+    dotTimer = null;
+  }
+
+  // the reserved width is measured in pixels, so it has to be retaken if the
+  // type size changes under it
+  addEventListener('resize', () => {
+    if (statusVal && statusVal.style.width) pinStatusWidth();
+  });
 
   /* ── readout ────────────────────────────────────────────── */
   let bpmTick = 0;
@@ -422,6 +480,7 @@
       const distort = 0.22 + 0.78 * Math.min(p / 0.6, 1);
 
       root.style.setProperty('--glitch', opacity.toFixed(3));
+      root.style.setProperty('--glitch-amt', distort.toFixed(3));
       if (!reduceMotion) {
         drawGlitch(distort);
         state.glitchSwap -= dt;
@@ -443,7 +502,9 @@
   let last = performance.now();
 
   function frame(now) {
-    const dt = Math.min((now - last) / 1000, 0.05);
+    // clamp both ends: a long pause must not fling the simulation forward, and a
+    // clock that fails to advance must not hand it a zero or negative step
+    const dt = Math.min(Math.max((now - last) / 1000, 0.001), 0.05);
     last = now;
 
     // clicks decay if they aren't kept up
@@ -454,6 +515,16 @@
         tone(150, 0.16, 0.05, 'triangle', 70);
       }
       cooldown.style.setProperty('--cool', Math.max(0, state.cool / COOLDOWN).toFixed(3));
+    }
+
+    // blood level: it surges with each pump, drains back if a click lapses, and
+    // keeps rising on its own once the heart is away
+    state.fill += (state.fillTarget - state.fill) *
+      Math.min(1, dt * (state.alive ? 0.7 : 3));
+    root.style.setProperty('--fill', state.fill.toFixed(4));
+    if (fluid) {
+      if (state.fill > 0.002) fluid.dataset.on = '1';
+      else delete fluid.dataset.on;
     }
 
     state.amp += (state.ampTarget - state.amp) * Math.min(1, dt * 2.2);
@@ -501,6 +572,7 @@
       else delete pip.dataset.on;
     });
     setVitality(n / CLICKS_TO_REVIVE);
+    state.fillTarget = n * FILL_PER_CLICK;
     cooldown.dataset.on = (n > 0 && n < CLICKS_TO_REVIVE) ? '1' : '0';
 
     if (n === 0) {
@@ -518,8 +590,11 @@
     state.alive = true;
     state.mode = 'alive';
     state.ampTarget = 1;
+    state.fillTarget = 1;          // keeps filling once it is beating on its own
     state.bpm = 46;
     state.ease = 3;
+
+    startLoadingDots();                    // threshold met: the site starts loading
 
     stage.dataset.alive = '1';
     prompt.dataset.done = '1';
