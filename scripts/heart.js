@@ -6,7 +6,21 @@
 (() => {
   'use strict';
 
-  const $ = (id) => document.getElementById(id);
+    const $ = (id) => document.getElementById(id);
+    
+    const INTRO_DISABLED = true;
+
+    if (INTRO_DISABLED) {
+      const welcomeEl = $('welcome');
+      if (welcomeEl) welcomeEl.remove();
+      const replayEl = $('replay');
+      if (replayEl) replayEl.remove();   // nothing to replay
+      document.body.classList.remove('is-intro');
+      document.body.classList.add('is-live');
+      const yearNow = $('year');
+      if (yearNow) yearNow.textContent = String(new Date().getFullYear());
+      return;
+    }
 
   const root      = document.documentElement;
   const body      = document.body;
