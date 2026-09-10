@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NoMouth Studio — Games and New Media Design</title>
+<meta name="description" content="NoMouth Studio — games and new media design.">
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Silkscreen is only for the intro; the site itself is Geist Mono -->
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300..600&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/main.css">
+</head>
+<body class="is-intro">
+
+<!-- ══ Welcome: restart the heart ═══════════════════════════ -->
+<div class="welcome" id="welcome">
+  <div class="stage" id="stage">
+
+    <section class="panel monitor" aria-live="polite">
+      <div class="panel__inner monitor__inner">
+        <div class="monitor__row">
+          <span class="monitor__value" id="bpmValue">--</span>
+          <span class="monitor__unit">BPM</span>
+        </div>
+        <div class="monitor__status" id="bpmStatus">ASYSTOLE</div>
+      </div>
+    </section>
+
+    <div class="heartzone">
+      <button class="heart" id="heart" type="button" aria-describedby="prompt">
+        <span class="heart__glow" aria-hidden="true"></span>
+        <span class="heart__stack is-pixel" id="heartStack">
+          <img class="heart__img" id="heartImg" src="assets/heart.png"
+               alt="A pixel-art human heart, still and grey.">
+        </span>
+      </button>
+
+      <p class="prompt" id="prompt">CLICK THE HEART</p>
+
+      <ol class="pips" id="pips" aria-hidden="true">
+        <li class="pip"></li><li class="pip"></li><li class="pip"></li>
+      </ol>
+
+      <!-- drains between clicks; empties and you lose one -->
+      <div class="cooldown" id="cooldown" aria-hidden="true"><span></span></div>
+    </div>
+
+    <section class="panel ekg">
+      <div class="panel__inner ekg__inner">
+        <canvas id="ekg" width="320" height="128" aria-label="Electrocardiogram trace"></canvas>
+        <span class="ekg__lead">LEAD II</span>
+      </div>
+    </section>
+
+    <button class="sound" id="sound" type="button" aria-pressed="true">
+      <span aria-hidden="true">♪</span> SOUND
+    </button>
+
+    <button class="skip" id="skip" type="button">SKIP INTRO</button>
+
+  </div>
+
+  <div class="scanlines" aria-hidden="true"></div>
+  <canvas class="crt" id="crt" aria-hidden="true"></canvas>
+</div>
+
+<!-- ══ The site itself ══════════════════════════════════════ -->
+<div class="home" id="home">
+
+  <header class="site-header">
+    <a class="site-header__mark" href="#top">NOMOUTH<span>STUDIO</span></a>
+    <nav class="site-nav">
+      <a href="#work">WORK</a><a href="#contact">CONTACT</a>
+    </nav>
+  </header>
+
+  <main id="top">
+
+    <section class="hero">
+      <div class="hero__stage" id="heroStage">
+        <h1 class="hero__title">
+          <img class="hero__logo" id="heroLogo" src="assets/logo.png"
+               width="1500" height="1063" alt="NoMouth Studio">
+        </h1>
+        <!-- Typed out when a name is held. Sticks below the header while the
+             title section is on screen, and sits under the blocks so a block
+             dragged over it covers it. -->
+        <div class="hero__sayWrap" aria-hidden="true">
+          <p class="hero__say" id="heroSay"><span
+            id="heroSayText"></span><span class="hero__caret"></span><span
+            class="hero__ghost" id="heroSayRest"></span></p>
+        </div>
+
+        <!-- Draggable name blocks. These are the studio's only team listing,
+             so each carries its role for assistive tech. -->
+        <ul class="hero__blocks" id="heroBlocks">
+          <li class="chip" data-role="Media designer and artist">Jasmine
+            Sumpter<span class="vh"> — Media designer and artist</span></li>
+          <li class="chip" data-role="Technical designer and developer">Jada
+            Sumpter<span class="vh"> — Technical designer and developer</span></li>
+          <li class="chip" data-role="Audio designer and developer">Christopher
+            Kim<span class="vh"> — Audio designer and developer</span></li>
+        </ul>
+      </div>
+      <!-- black base: the logo's black runs straight into this and on down
+           into the team section, with no seam -->
+      <div class="hero__base">
+        <p class="hero__tag">GAMES AND NEW MEDIA DESIGN</p>
+        <p class="hero__lede">
+          NOMOUTH STUDIO is a media art and research collective.<br>
+          We create Immersive Interface Art through games and installations.
+        </p>
+      </div>
+    </section>
+
+    <!-- TODO: Eudai still needs a thumbnail once there is something to show.
+         Make it with tools/prepare-thumb.py. -->
+    <section class="section" id="work">
+      <h2 class="section__title">WORK</h2>
+      <ul class="grid">
+
+        <li class="card">
+          <a class="card__link" href="https://www.youtube.com/watch?v=K5RhMARlOlY"
+             target="_blank" rel="noopener noreferrer">
+            <span class="card__art" data-art="1">
+              <img class="card__thumb" src="assets/work-owsu1.jpg" alt="" loading="lazy"
+                   width="800" height="600">
+              <span class="card__play" aria-hidden="true"></span>
+            </span>
+            <h3 class="card__title">OWSU1!</h3>
+            <p class="card__meta">GAME · 2025</p>
+            <p class="card__note">2025 alt.ctrl.GDC Finalist</p>
+            <span class="vh">— watch on YouTube</span>
+          </a>
+        </li>
+
+        <li class="card">
+          <a class="card__link" href="https://www.youtube.com/shorts/wni4usuOpKc"
+             target="_blank" rel="noopener noreferrer">
+            <span class="card__art" data-art="2">
+              <img class="card__thumb" src="assets/work-flounder.jpg" alt="" loading="lazy"
+                   width="800" height="600">
+              <span class="card__play" aria-hidden="true"></span>
+            </span>
+            <h3 class="card__title">Hypnogogic Flounder</h3>
+            <p class="card__meta">INSTALLATION · 2026</p>
+            <p class="card__note">Digital Graffiti 2026 Finalist</p>
+            <span class="vh">— watch on YouTube</span>
+          </a>
+        </li>
+
+        <li class="card">
+          <a class="card__link" href="https://www.youtube.com/watch?v=FnXfxBm-eVY"
+             target="_blank" rel="noopener noreferrer">
+            <span class="card__art" data-art="3">
+              <img class="card__thumb" src="assets/work-garden.jpg" alt="" loading="lazy"
+                   width="800" height="600">
+              <span class="card__play" aria-hidden="true"></span>
+            </span>
+            <h3 class="card__title">SehLah; Garden</h3>
+            <p class="card__meta">INSTALLATION · 2026</p>
+            <p class="card__note">Gesture-controlled interactive installation.
+              Precursor to Eudai.</p>
+            <span class="vh">— watch on YouTube</span>
+          </a>
+        </li>
+
+        <li class="card card--soon">
+          <div class="card__link">
+            <span class="card__art" data-art="4">
+              <span class="card__soon">COMING SOON</span>
+            </span>
+            <h3 class="card__title">SehLah; Eudai</h3>
+            <p class="card__meta">INTERACTIVE INSTALLATION · 2026–27</p>
+            <p class="card__note">In production.</p>
+          </div>
+        </li>
+
+      </ul>
+    </section>
+
+    <section class="section" id="contact">
+      <h2 class="section__title">CONTACT</h2>
+      <p class="contact">
+        <a href="mailto:nomouthstudio@gmail.com">nomouthstudio@gmail.com</a>
+      </p>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <img class="site-footer__heart" src="assets/heart.png" alt="" aria-hidden="true">
+    <p>© <span id="year">2026</span> NoMouth Studio</p>
+    <button class="replay" id="replay" type="button">REPLAY INTRO</button>
+  </footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.20.0/matter.min.js"
+        integrity="sha512-6+7rTBmR6pRFe9fa0vCFjFaHZj/XYa7774bEBzRtxgdpIJOS++R3cKd6Prg/eJmxtsJotd8KAg4g57uuVQsZKA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="scripts/heart.js"></script>
+<script src="scripts/nameblocks.js" defer></script>
+</body>
+</html>
